@@ -1,0 +1,20 @@
+# rbpodo_rl Python 의존성
+# pip install -r requirements.txt
+
+# RL 프레임워크
+stable-baselines3>=2.0.0
+gymnasium>=0.29.0
+
+# 딥러닝 (CPU 버전; GPU 쓸 경우 아래 주석 참고)
+torch>=2.0.0
+
+# 수치 연산 / 시각화
+numpy>=1.24.0
+matplotlib>=3.7.0
+
+# 학습 진행 표시
+tqdm>=4.65.0
+rich>=13.0.0
+
+# TensorBoard 로깅
+tensorboard>=2.13.0

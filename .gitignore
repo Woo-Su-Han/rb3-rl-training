@@ -1,0 +1,27 @@
+# ROS2 빌드 산출물
+build/
+install/
+log/
+
+# Python 캐시
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.egg-info/
+dist/
+.eggs/
+
+# 학습 결과 (용량이 크므로 제외; 공유하려면 runs/ 제거)
+runs/
+
+# IDE
+.vscode/
+.idea/
+**/.cursor/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 개발용 실험 코드 (GitHub에 올리지 않음)
+Code_fk_3 dof/

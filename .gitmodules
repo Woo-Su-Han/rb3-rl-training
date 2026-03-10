@@ -1,0 +1,3 @@
+[submodule "src/rbpodo_ros2"]
+	path = src/rbpodo_ros2
+	url = https://github.com/RainbowRobotics/rbpodo_ros2.git

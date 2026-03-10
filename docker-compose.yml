@@ -1,0 +1,96 @@
+version: "3.8"
+
+# =========================================================================
+# rbpodo_rl docker-compose
+#
+# 서비스:
+#   gazebo     — Gazebo + ROS2 컨트롤러 실행 (GUI 포함)
+#   train      — Gazebo에 연결해서 RL 학습
+#   train-noros — Gazebo 없이 FK 시뮬레이션만으로 학습 (테스트용)
+#
+# 실행 예:
+#   # Gazebo + 학습 동시 실행
+#   docker compose up
+#
+#   # Gazebo 없이 빠른 학습 테스트
+#   docker compose run --rm train-noros
+#
+#   # 이어학습
+#   docker compose run --rm train \
+#     python3 /ros2_ws/src/rbpodo_rl/rbpodo_rl/train.py \
+#     --resume --ckpt runs/sac_P_seed0_.../checkpoints/model_300000_steps.zip
+# =========================================================================
+
+x-base: &base
+  image: rbpodo_rl:latest
+  build:
+    context: .
+    dockerfile: Dockerfile
+  environment:
+    - DISPLAY=${DISPLAY:-:0}
+    - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+    - ROS_DOMAIN_ID=0
+  volumes:
+    # 호스트의 runs/ 폴더를 마운트해서 학습 결과 저장
+    - ./runs:/ros2_ws/runs
+    # X11 소켓 (Gazebo GUI용)
+    - /tmp/.X11-unix:/tmp/.X11-unix:rw
+  network_mode: host
+
+services:
+
+  # ── Gazebo 실행 ────────────────────────────────────────────────────────
+  gazebo:
+    <<: *base
+    container_name: rbpodo_gazebo
+    command: >
+      bash -c "
+        ros2 launch rbpodo_gazebo rb3_gazebo.launch.py
+      "
+
+  # ── Gazebo 연결 학습 ────────────────────────────────────────────────────
+  train:
+    <<: *base
+    container_name: rbpodo_train
+    depends_on:
+      - gazebo
+    command: >
+      bash -c "
+        echo '[INFO] Gazebo 준비 대기 중 (15초)...' &&
+        sleep 15 &&
+        cd /ros2_ws &&
+        python3 src/rbpodo_rl/rbpodo_rl/train.py \
+          --reward-mode P \
+          --auto-advance \
+          --total-steps 700000 \
+          --save-freq 50000 \
+          --eval-freq 10000
+      "
+
+  # ── FK 시뮬레이션만 (Gazebo 불필요) ────────────────────────────────────
+  train-noros:
+    <<: *base
+    container_name: rbpodo_train_noros
+    command: >
+      bash -c "
+        cd /ros2_ws &&
+        python3 src/rbpodo_rl/rbpodo_rl/train.py \
+          --no-ros \
+          --reward-mode P \
+          --auto-advance \
+          --total-steps 700000 \
+          --save-freq 50000 \
+          --eval-freq 10000
+      "
+
+  # ── TensorBoard ────────────────────────────────────────────────────────
+  tensorboard:
+    <<: *base
+    container_name: rbpodo_tensorboard
+    ports:
+      - "6006:6006"
+    command: >
+      bash -c "
+        pip3 install tensorboard --quiet &&
+        tensorboard --logdir /ros2_ws/runs --host 0.0.0.0 --port 6006
+      "
