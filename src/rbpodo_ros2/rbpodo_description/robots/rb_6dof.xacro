@@ -1,0 +1,88 @@
+<?xml version='1.0' encoding='utf-8'?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="link" params="name base_name:='' model_id:=^ has_inertial:=true">
+    <xacro:property name="links_props_file" value="$(find rbpodo_description)/robots/${model_id}/link.yaml" />
+    <xacro:property name="links_props" value="${xacro.load_yaml(links_props_file)}" />
+    <xacro:property name="yaml_key" value="${base_name or name}" />
+
+    <link name="${name}">
+      <visual>
+        <geometry>
+          <mesh filename="package://rbpodo_description/meshes/${model_id}/visual/${yaml_key}.dae" />
+        </geometry>
+      </visual>
+
+      <collision>
+        <geometry>
+          <mesh filename="package://rbpodo_description/meshes/${model_id}/collision/${yaml_key}.stl" />
+        </geometry>
+      </collision>
+
+      <xacro:if value="${has_inertial}">
+        <!-- Check whether this property is available or not -->
+        <xacro:property name="props" value="${links_props[yaml_key]}" />
+        <xacro:property name="inertial" value="${props.inertial}" />
+        <inertial>
+          <origin rpy="${inertial.origin.rpy}" xyz="${inertial.origin.xyz}" />
+          <mass value="${inertial.mass}" />
+          <xacro:property name="I" value="${inertial.inertia}" />
+          <inertia ixx="${I.xx}" ixy="${I.xy}" ixz="${I.xz}" iyy="${I.yy}" iyz="${I.yz}" izz="${I.zz}" />
+        </inertial>
+      </xacro:if>
+    </link>
+  </xacro:macro>
+
+  <xacro:macro name="joint" params="name base_name:='' model_id:=^ prefix=''">
+    <xacro:property name="joints_props_file" value="$(find rbpodo_description)/robots/${model_id}/joint.yaml" />
+    <xacro:property name="joints_props" value="${xacro.load_yaml(joints_props_file)}" />
+    <xacro:property name="yaml_key" value="${base_name or name}" />
+    <!-- Check whether name is in joints_props or not -->
+    <xacro:property name="props" value="${joints_props[yaml_key]}" />
+
+    <joint name="${name}" type="revolute">
+      <origin xyz="${props.origin.xyz}" rpy="${props.origin.rpy}" />
+      <parent link="${prefix}${props.parent}" />
+      <child link="${prefix}${props.child}" />
+      <axis xyz="${props.axis.xyz}" />
+
+      <xacro:property name="limit" value="${props.limit}" />
+      <limit lower="${limit.lower}" upper="${limit.upper}" effort="${limit.effort}" velocity="${limit.velocity}" />
+    </joint>
+  </xacro:macro>
+
+  <xacro:macro name="rb_6dof" params="model_id prefix='' tcp_name='tcp' tcp_xyz='0 0 0' tcp_rpy='0 0 0'">
+    <link name="${prefix}link0">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="1.0"/>
+        <inertia ixx="0.01" ixy="0.0" ixz="0.0"
+                 iyy="0.01" iyz="0.0"
+                 izz="0.01"/>
+      </inertial>
+    </link>
+
+    <xacro:link name="${prefix}link1" base_name="link1" />
+    <xacro:link name="${prefix}link2" base_name="link2" />
+    <xacro:link name="${prefix}link3" base_name="link3" />
+    <xacro:link name="${prefix}link4" base_name="link4" />
+    <xacro:link name="${prefix}link5" base_name="link5" />
+    <xacro:link name="${prefix}link6" base_name="link6" />
+    <link name="${prefix}${tcp_name}" />
+
+    <xacro:joint name="${prefix}base"     base_name="base"     prefix="${prefix}" />
+    <xacro:joint name="${prefix}shoulder" base_name="shoulder" prefix="${prefix}" />
+    <xacro:joint name="${prefix}elbow"    base_name="elbow"    prefix="${prefix}" />
+    <xacro:joint name="${prefix}wrist1"   base_name="wrist1"   prefix="${prefix}" />
+    <xacro:joint name="${prefix}wrist2"   base_name="wrist2"   prefix="${prefix}" />
+    <xacro:joint name="${prefix}wrist3"   base_name="wrist3"   prefix="${prefix}" />
+
+    <joint name="${prefix}${tcp_name}_joint" type="fixed">
+      <origin xyz="${tcp_xyz}" rpy="${tcp_rpy}" />
+      <parent link="${prefix}link6" />
+      <child link="${prefix}${tcp_name}" />
+    </joint>
+
+  </xacro:macro>
+
+</robot>

@@ -1,0 +1,196 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+  두 대의 RB3-730ES-U 로봇을 하나의 URDF로 합친 파일.
+  - 단일 Gazebo 모델로 스폰 → gazebo_ros2_control 플러그인이 하나만 로드됨
+  - 네임스페이스 충돌 버그 회피
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="rb3_dual">
+
+  <xacro:include filename="$(find rbpodo_description)/robots/rb_6dof.xacro" />
+  <xacro:include filename="$(find rbpodo_description)/robots/rb_6dof.ros2_control.xacro" />
+
+  <!-- 로봇 간 거리 (m) -->
+  <xacro:arg name="robot2_x" default="1.5"/>
+  <xacro:arg name="robot2_y" default="0.0"/>
+
+  <!-- 컨트롤러 파라미터 파일 (launch에서 주입) -->
+  <xacro:arg name="params_file" default=""/>
+  <xacro:property name="params_file_val" value="$(arg params_file)"/>
+
+  <!-- 공통 토크 상수 -->
+  <xacro:property name="base_tc"     value="${0.1 * 101}" />
+  <xacro:property name="shoulder_tc" value="${0.1 * 101}" />
+  <xacro:property name="elbow_tc"    value="${0.1 * 101}" />
+  <xacro:property name="wrist1_tc"   value="${0.1 * 101}" />
+  <xacro:property name="wrist2_tc"   value="${0.055 * 100}" />
+  <xacro:property name="wrist3_tc"   value="${0.055 * 100}" />
+
+  <!-- 공통 월드 링크 (두 로봇이 함께 고정됨) -->
+  <link name="world"/>
+
+  <!-- ===== Robot 1 (rb3_1_) at (0, 0, 0) ===== -->
+  <joint name="rb3_1_world_joint" type="fixed">
+    <origin xyz="0.0 0.0 0" rpy="0 0 0"/>
+    <parent link="world"/>
+    <child link="rb3_1_link0"/>
+  </joint>
+
+  <xacro:rb_6dof
+      model_id="rb3_730es_u"
+      prefix="rb3_1_"
+      tcp_name="tcp"
+      tcp_xyz="0 0 0.1"
+      tcp_rpy="0 0 0" />
+
+  <!-- ros2_control 하드웨어 블록 (Gazebo 플러그인 제외) -->
+  <xacro:rb_6dof_ros2_control
+      prefix="rb3_1_"
+      robot_ip="10.0.2.7"
+      include_gazebo_plugin="false"
+      torque_constants="${[base_tc, shoulder_tc, elbow_tc, wrist1_tc, wrist2_tc, wrist3_tc]}" />
+
+  <!-- Transmissions -->
+  <transmission name="rb3_1_base_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="rb3_1_base">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="rb3_1_base_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="rb3_1_shoulder_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="rb3_1_shoulder">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="rb3_1_shoulder_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="rb3_1_elbow_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="rb3_1_elbow">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="rb3_1_elbow_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="rb3_1_wrist1_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="rb3_1_wrist1">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="rb3_1_wrist1_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="rb3_1_wrist2_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="rb3_1_wrist2">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="rb3_1_wrist2_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="rb3_1_wrist3_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="rb3_1_wrist3">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="rb3_1_wrist3_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <!-- ===== Robot 2 (rb3_2_) at (robot2_x, robot2_y, 0) ===== -->
+  <joint name="rb3_2_world_joint" type="fixed">
+    <origin xyz="$(arg robot2_x) $(arg robot2_y) 0" rpy="0 0 0"/>
+    <parent link="world"/>
+    <child link="rb3_2_link0"/>
+  </joint>
+
+  <xacro:rb_6dof
+      model_id="rb3_730es_u"
+      prefix="rb3_2_"
+      tcp_name="tcp"
+      tcp_xyz="0 0 0.1"
+      tcp_rpy="0 0 0" />
+
+  <xacro:rb_6dof_ros2_control
+      prefix="rb3_2_"
+      robot_ip="10.0.2.8"
+      include_gazebo_plugin="false"
+      torque_constants="${[base_tc, shoulder_tc, elbow_tc, wrist1_tc, wrist2_tc, wrist3_tc]}" />
+
+  <!-- Transmissions -->
+  <transmission name="rb3_2_base_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="rb3_2_base">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="rb3_2_base_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="rb3_2_shoulder_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="rb3_2_shoulder">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="rb3_2_shoulder_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="rb3_2_elbow_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="rb3_2_elbow">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="rb3_2_elbow_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="rb3_2_wrist1_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="rb3_2_wrist1">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="rb3_2_wrist1_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="rb3_2_wrist2_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="rb3_2_wrist2">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="rb3_2_wrist2_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+  <transmission name="rb3_2_wrist3_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="rb3_2_wrist3">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="rb3_2_wrist3_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <!-- 단일 Gazebo 플러그인 (두 로봇 모두 관리) -->
+  <gazebo>
+    <plugin name="gazebo_ros2_control" filename="libgazebo_ros2_control.so">
+      <xacro:if value="${params_file_val != ''}">
+        <parameters>${params_file_val}</parameters>
+      </xacro:if>
+      <xacro:unless value="${params_file_val != ''}">
+        <parameters>$(find rbpodo_bringup)/config/controllers_dual.yaml</parameters>
+      </xacro:unless>
+    </plugin>
+  </gazebo>
+
+</robot>

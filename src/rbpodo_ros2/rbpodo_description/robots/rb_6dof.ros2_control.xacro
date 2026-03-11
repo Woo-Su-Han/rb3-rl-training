@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='utf-8'?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="rb_6dof_ros2_control"
+               params="prefix ros_namespace:='' params_file:='' robot_ip cb_simulation:=^|false use_fake_hardware:=^|false fake_sensor_commands:=^|false torque_constants:=${[1,1,1,1,1,1]} include_gazebo_plugin:=true">
+
+    <ros2_control name="${prefix}RBPodoHardwareInterface" type="system">
+
+      <hardware>
+        <xacro:if value="${use_fake_hardware}">
+          <plugin>mock_components/GenericSystem</plugin>
+          <param name="mock_sensor_commands">${fake_sensor_commands}</param>
+          <param name="state_following_offset">0.0</param>
+        </xacro:if>
+
+        <xacro:unless value="${use_fake_hardware}">
+          <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+        </xacro:unless>
+      </hardware>
+
+      <xacro:macro name="configure_joint" params="joint_name torque_constant:=1">
+        <joint name="${joint_name}">
+          <param name="initial_position">0.0</param>
+          <param name="torque_constant">${torque_constant}</param>
+          <command_interface name="effort"/>
+          <command_interface name="velocity"/>
+          <command_interface name="position"/>
+          <state_interface name="position"/>
+          <state_interface name="effort"/>
+        </joint>
+      </xacro:macro>
+
+      <xacro:configure_joint joint_name="${prefix}base"     torque_constant="${torque_constants[0]}"/>
+      <xacro:configure_joint joint_name="${prefix}shoulder" torque_constant="${torque_constants[1]}"/>
+      <xacro:configure_joint joint_name="${prefix}elbow"    torque_constant="${torque_constants[2]}"/>
+      <xacro:configure_joint joint_name="${prefix}wrist1"   torque_constant="${torque_constants[3]}"/>
+      <xacro:configure_joint joint_name="${prefix}wrist2"   torque_constant="${torque_constants[4]}"/>
+      <xacro:configure_joint joint_name="${prefix}wrist3"   torque_constant="${torque_constants[5]}"/>
+
+    </ros2_control>
+
+    <xacro:if value="${include_gazebo_plugin}">
+      <gazebo>
+        <plugin name="${prefix}gazebo_ros2_control" filename="libgazebo_ros2_control.so">
+          <xacro:if value="${params_file != ''}">
+            <parameters>${params_file}</parameters>
+          </xacro:if>
+          <xacro:unless value="${params_file != ''}">
+            <parameters>$(find rbpodo_bringup)/config/controllers.yaml</parameters>
+          </xacro:unless>
+
+          <xacro:if value="${ros_namespace != ''}">
+            <ros>
+              <namespace>${ros_namespace}</namespace>
+            </ros>
+          </xacro:if>
+        </plugin>
+      </gazebo>
+    </xacro:if>
+
+  </xacro:macro>
+
+</robot>
