@@ -1,0 +1,26 @@
+# 빌드 캐시 / 바이너리
+build/
+install/
+log/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# 학습 결과 (호스트 볼륨으로 마운트)
+runs/
+
+# Git
+**/.git/
+**/.gitignore
+
+# IDE
+.vscode/
+.idea/
+**/.cursor/
+
+# 문서
+**/*.md
+!README.md
+
+# 개발용 코드 (컨테이너에 불필요)
+"Code_fk_3 dof"/
